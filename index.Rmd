@@ -1,0 +1,123 @@
+---
+title       : Animated Choropleths using ggplot2,googleVis,and rCharts
+subtitle    : 
+author      : Vivek Patil
+job         : 
+framework   : bootstrap        # {io2012, html5slides, shower, dzslides, ...}
+highlighter : highlight.js  # {highlight.js, prettify, highlight}
+hitheme     : tomorrow      # 
+widgets     : []            # {mathjax, quiz, bootstrap}
+mode        : selfcontained # {standalone, draft}
+---
+### Getting Data from Quandl
+
+Quandl provides violent crime rates (per 100,000 people) from 1960 through 2010 by State and the data are sourced from the FBI (Uniform Crime Reports as prepared by the National Archive of Criminal Justice Data).
+
+```{r echo = T}
+library(Quandl)
+# Not required but removes a warning message--- Quandl.auth("yourauthcode")  
+# Quandl.search("violent crime")
+vcData=Quandl("FBI_UCR/USCRIME_TYPE_VIOLENTCRIMERATE")
+#save(vcData,file="vcData.rda")
+load("vcData.rda")
+dim(vcData)
+head(vcData,2)
+tail(vcData,2)
+```
+There are 51 rows and 53 columns in the dataset.  Data is for 51 years (2010-12-31 through 1960-12-31). 53 columns include a column for Year, each state  and the District of Columbia, and the average for the country.
+Let's now do three things.
+1. Create a column denoting the year 
+2. Drop the column involving date (the existing 'Year' column)
+3. Drop the column involving the average for the country
+3. Drop the column for District of Columbia, which is not a State.
+
+
+```{r echo = T}
+vcData$Yearonly=2010:1960 # Creating a new column with Year
+vcData=vcData[,-1] # Dropping the existing 'Year' column
+vcData=vcData[,-52] # Dropping the column with average for the country
+vcData=vcData[,-9]# Dropping the column for Washington DC, the 9th column
+```
+Instead of looking at annual data, let's focus on different decades (2001-2010 [rows 1-10], 1991-2000 [rows 11-20], 1981-1990 [rows 21-30], 1971-1980 [rows 31-40], and 1961-1970 [rows 41-50]). Let us compute the mean violent crime rates for each state for each decade. Since 1960 does not fit in to our plans, let us drop that row. 
+
+```{r echo = T}
+vcData=vcData[-51,]# Removing the row for 1960, the 51st row
+decades=data.frame(
+                   Decade2001_2010=colMeans(vcData[1:10,],na.rm=TRUE),
+                   Decade1991_2000=colMeans(vcData[11:20,],na.rm=TRUE),
+                   Decade1981_1990=colMeans(vcData[21:30,],na.rm=TRUE),
+                   Decade1971_1980=colMeans(vcData[31:40,],na.rm=TRUE),
+                   Decade1961_1970=colMeans(vcData[41:50,],na.rm=TRUE))
+decades$State=row.names(decades) # We needed a column for State and the row names provided that
+decades=decades[-51,] # Remove the row for Yearonly, which is irrelevant.
+dim(decades)
+head(decades,2)
+tail(decades,2)
+```
+### Choropleths of different decades using ggplot2 and animation
+
+The first order of business was to get a US map. A typical map file generated from the maps package does not include Alaska and Hawaii. Scouring the web for someone who might've addressed this issue took me to  <a href="http://loloflargenumbers.com/blog/#.Up5D6sSkpS4" target="_blank">this post of Kristopher Kapphahn.</a>  The post was terrific and provided the complete code for generating such a map. This code, which is <a href="github.com/patilv/choroplethanimation/AllUSShapeFile" target="_blank">in a separate file for those interested in it</a>, was used to generated a file all_us.rda. We use this file below for the map.
+
+###### A preliminary choropleth for the 2001-2010 decade
+
+```{r echo = T}
+load("all_us.rda")
+uslessdc=all_us[all_us$STATE_NAME!="District of Columbia",]
+uslessdc$STATE_NAME=factor(uslessdc$STATE_NAME)
+uslessdc$CrimeRate=decades[,1][ match(uslessdc$STATE_NAME,decades$State)]# bring value of decade to map data
+library(ggplot2)
+ggplot(data = uslessdc, aes(x=x_proj, y=y_proj, group = DRAWSEQ, fill=CrimeRate)) + geom_polygon(color = "black")+ggtitle(paste("Violent Crime Rate in", names(decades[1]))) +xlab("")+ ylab("")
+```
+##### Tweaking Data and Animating Choropleths
+To bring in more clarity, let us classify states into 3 different groups based on their violent crime rates for a decade and color code them differently. Top 1/3 in crime rates (high, denoted by number 3) are most dangerous and middle 1/3 (medium,  denoted by number 2) are more dangerous than the bottom 1/3 (low, denoted by number 1). 
+
+```{r echo = T}
+# Create a new dataframe with crime rate data in decades classified into 3 levels of crime rate for States for a decade.
+decadespct=decades
+for (i in 1:5) {
+quantile=quantile(decades[,i],c(1/3,2/3))
+decadespct[,i]= with(decades, factor(ifelse(decades[,i] < quantile[1], "1", 
+                                                             ifelse(decades[,i] < quantile[2], "2","3"))))}
+head(decadespct,2)
+save(decadespct,file="decadespct.rda")
+```
+On to the animation.
+
+
+```{r echo = T, results="asis", warning=FALSE,message=FALSE}
+library(animation)
+saveHTML({
+for (i in 1:5) {
+  uslessdc$CrimeRate=decadespct[,i][ match(uslessdc$STATE_NAME,decadespct$State)]# bring value of decade to map data
+  mycols=c("#4daf4a","#fc8d62","red") # Setting a color palette
+   ggchoropleth= ggplot(data = uslessdc, aes(x=x_proj, y=y_proj, group = DRAWSEQ, fill=CrimeRate)) + geom_polygon(color = "black")+ ggtitle(paste("Violent Crime Rate in", names(decadespct[i]))) +xlab("")+ ylab("")+scale_fill_manual(values=mycols, labels=c("Low", "Medium", "High"))+theme(legend.position="top")
+  print(ggchoropleth)
+}
+         }, img.name = "decadeplots", imgdir = "decadeplots", htmlfile = "decadeplots.html",outdir = getwd(),autobrowse = FALSE,ani.height=400,ani.width=600,
+         verbose=FALSE,autoplay=TRUE,title = "Violent Crime Rates")
+```
+<iframe src="decadeplots.html" width=650 height=475> </iframe>
+
+### Choropleths of different decades using rCharts, googleVis, and Shiny
+
+Before we proceed with these, let's quickly modify the decadespct data frame and save it for use in this set of animations. Please see the comments for changes made.
+
+```{r echo = T}
+decadespctshiny=decadespct
+library(reshape2)
+decadespctshiny=melt(decadespctshiny,id="State") # Reshaping data frame
+names(decadespctshiny)=c("State","Decade_Beginning","CrimeRateGroup") # Renaming variables
+levels(decadespctshiny$Decade_Beginning) = c("2000","1990","1980","1970","1960") # For animation purposes, replaced decade names by these numbers (e.g., Decade2001_2010 is labeled as 2000, Decade1991_2000 is labeled as 1990, and so on. 
+decadespctshiny$Decade_Beginning=as.numeric(as.character(decadespctshiny$Decade_Beginning)) # converting factor to numeric 
+decadespctshiny$CrimeRateGroup=as.numeric(decadespctshiny$CrimeRateGroup) # Converting character to numeric
+library(stringr)
+library(plyr)
+decadespctshiny = mutate(decadespctshiny,State = str_trim(State),state = state.abb[match(State, state.name)])# Adding a column of abbreviated state names - used in rCharts    
+save(decadespctshiny,file="decadespctshiny.rda") # this file is used in the shiny app
+```
+
+Lastly, the app. (Please press the play button. You can toggle between the rCharts version and the googleVis version by selecting the relevant tab.) The app's <a href="http://www.github.com/patilv/choroplethanimation/Crimerateshinyapp" target="_blank">code can be found on github.</a>  The app is being hosted on RStudio's <a href="http://shinyapps.io" target="_blank">shinyapps.io </a> site. This has made deploying shiny apps so much more easier than it used to be previously. Thanks for the wonderful thing.
+<iframe src="http://patilv.shinyapps.io/Crimerateshinyapp/" width=800 height=610> </iframe>
+
+
+

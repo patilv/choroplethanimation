@@ -1,0 +1,270 @@
+<!DOCTYPE html>
+<!--[if lt IE 7]>      <html class="no-js lt-ie9 lt-ie8 lt-ie7"> <![endif]-->
+<!--[if IE 7]>         <html class="no-js lt-ie9 lt-ie8"> <![endif]-->
+<!--[if IE 8]>         <html class="no-js lt-ie9"> <![endif]-->
+<!--[if gt IE 8]><!--> <html class="no-js"> <!--<![endif]-->
+<head>
+  <meta charset="utf-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge,chrome=1">
+  <title>Animated Choropleths using ggplot2,googleVis,and rCharts</title>
+  <meta name="description" content="">
+  <meta name="viewport" content="width=device-width">
+  <link rel="icon" type="image/png" href="favicon.ico">
+  <style>
+  body {
+    padding-top: 60px;
+    padding-bottom: 40px;
+  }
+  </style>
+  
+<link href="http://netdna.bootstrapcdn.com/twitter-bootstrap/2.1.1/css/bootstrap.no-responsive.no-icons.min.css" rel="stylesheet">
+<!-- <link rel="stylesheet" href="/css/bootstrap.min.css"> -->
+<link  rel="stylesheet" 
+    href="http://netdna.bootstrapcdn.com/font-awesome/2.0/css/font-awesome.css">
+  <link rel="stylesheet" href="libraries/frameworks/bootstrap/css/bootstrap-responsive.min.css">
+  
+  <link rel="stylesheet" href="libraries/frameworks/bootstrap/css/main.css">
+  <link rel="stylesheet" href="libraries/highlighters/highlight.js/css/tomorrow.css" />
+  <script src="libraries/frameworks/bootstrap/js/vendor/modernizr-2.6.1-respond-1.1.0.min.js"></script>
+  <script src="http://ajax.googleapis.com/ajax/libs/jquery/1.8.2/jquery.min.js"></script>
+  <script>window.jQuery || document.write('<script src="libraries/frameworks/bootstrap/js/vendor/jquery-1.8.2.min.js"><\/script>')</script>
+    <link rel=stylesheet href="./assets/css/ribbons.css"></link>
+
+  
+</head>
+<body>
+   <!--[if lt IE 7]>
+     <p class="chromeframe">You are using an outdated browser. 
+       <a href="http://browsehappy.com/">Upgrade your browser today</a> or 
+       <a href="http://www.google.com/chromeframe/?redirect=true"> 
+         install Google Chrome Frame
+       </a> to better experience this site.
+    </p>
+   <![endif]-->
+   <!-- Ref: http://twitter.github.com/bootstrap/examples/hero.html -->
+   
+    <div class="container">
+      <h3>Getting Data from Quandl</h3>
+<p>Quandl provides violent crime rates (per 100,000 people) from 1960 through 2010 by State and the data are sourced from the FBI (Uniform Crime Reports as prepared by the National Archive of Criminal Justice Data).</p>
+
+<pre><code class="r">library(Quandl)
+# Not required but removes a warning message--- Quandl.auth(&#39;yourauthcode&#39;)
+# Quandl.search(&#39;violent crime&#39;)
+vcData = Quandl(&quot;FBI_UCR/USCRIME_TYPE_VIOLENTCRIMERATE&quot;)
+# save(vcData,file=&#39;vcData.rda&#39;)
+load(&quot;vcData.rda&quot;)
+dim(vcData)
+</code></pre>
+
+<pre><code>## [1] 51 53
+</code></pre>
+
+<pre><code class="r">head(vcData, 2)
+</code></pre>
+
+<pre><code>##         Year Alabama Alaska Arizona Arkansas California Colorado
+## 1 2010-12-31   377.8  638.8   408.1    505.3      440.6    320.8
+## 2 2009-12-31   450.1  633.4   426.5    515.8      473.3    338.8
+##   Connecticut Delaware District of Columbia Florida Georgia Hawaii Idaho
+## 1       281.4    620.9                 1330   542.4   403.3  262.7 221.0
+## 2       300.9    645.4                 1349   612.5   428.0  274.1 246.2
+##   Illinois Indiana  Iowa Kansas Kentucky Louisiana Maine Maryland
+## 1    435.2   314.5 273.5  369.1    242.6     549.0 122.0    547.7
+## 2    497.2   334.0 282.1  406.6    255.0     642.9 119.9    590.0
+##   Massachusetts Michigan Minnesota Mississippi Missouri Montana Nebraska
+## 1         466.6    490.3     236.0       269.7    455.0   272.2    279.5
+## 2         462.6    499.8     244.5       286.3    492.9   287.0    289.4
+##   Nevada New Hampshire New Jersey New Mexico New York North Carolina
+## 1  660.6         167.0      307.7      588.9    392.1          363.4
+## 2  705.2         160.4      311.4      632.4    384.4          404.5
+##   North Dakota  Ohio Oklahoma Oregon Pennsylvania Rhode Island
+## 1        225.0 315.2    479.5  252.0        366.2        256.6
+## 2        266.4 331.9    503.4  260.6        382.3        254.3
+##   South Carolina South Dakota Tennessee Texas  Utah Vermont Virginia
+## 1          597.7        268.5     613.3 450.3 212.7   130.2    213.6
+## 2          675.2        218.7     666.0 491.0 215.4   134.6    230.8
+##   Washington West Virginia Wisconsin Wyoming United States
+## 1      313.8         314.6     248.7   195.9         403.6
+## 2      336.3         305.2     259.1   219.7         431.9
+</code></pre>
+
+<pre><code class="r">tail(vcData, 2)
+</code></pre>
+
+<pre><code>##          Year Alabama Alaska Arizona Arkansas California Colorado
+## 50 1961-12-31   168.5   88.9   164.5    100.7      232.7    149.3
+## 51 1960-12-31   186.6  104.3   207.7    107.7      239.0    137.3
+##    Connecticut Delaware District of Columbia Florida Georgia Hawaii Idaho
+## 50        33.6     69.4                587.9   217.8   157.2   24.5  32.5
+## 51        36.6     84.0                553.7   223.4   158.8   21.8  38.2
+##    Illinois Indiana Iowa Kansas Kentucky Louisiana Maine Maryland
+## 50    362.2    85.8 23.1   58.4     94.5     135.7  33.7    155.6
+## 51    365.1    84.6 23.8   58.4     97.3     153.2  29.8    151.3
+##    Massachusetts Michigan Minnesota Mississippi Missouri Montana Nebraska
+## 50          53.1    207.4      43.4       102.7    166.0    67.0     41.0
+## 51          48.8    217.7      42.0       102.7    172.9    67.1     41.8
+##    Nevada New Hampshire New Jersey New Mexico New York North Carolina
+## 50  183.6          14.3      107.0        130       NA          201.0
+## 51  145.8          13.3      114.3        143       NA          223.5
+##    North Dakota Ohio Oklahoma Oregon Pennsylvania Rhode Island
+## 50         25.0 80.9    103.3   69.0         97.9         42.9
+## 51         14.2 83.7     97.0   69.7         99.0         36.8
+##    South Carolina South Dakota Tennessee Texas Utah Vermont Virginia
+## 50          137.8         35.5     108.2 157.8 49.2    20.0    186.1
+## 51          143.7         41.4      91.1 161.0 54.3     9.5    183.7
+##    Washington West Virginia Wisconsin Wyoming United States
+## 50       58.1          63.1      31.5    85.2         158.1
+## 51       56.6          64.5      31.9   109.7         160.9
+</code></pre>
+
+<p>There are 51 rows and 53 columns in the dataset.  Data is for 51 years (2010-12-31 through 1960-12-31). 53 columns include a column for Year, each state  and the District of Columbia, and the average for the country.
+Let&#39;s now do three things.
+1. Create a column denoting the year 
+2. Drop the column involving date (the existing &#39;Year&#39; column)
+3. Drop the column involving the average for the country
+3. Drop the column for District of Columbia, which is not a State.</p>
+
+<pre><code class="r">vcData$Yearonly = 2010:1960  # Creating a new column with Year
+vcData = vcData[, -1]  # Dropping the existing &#39;Year&#39; column
+vcData = vcData[, -52]  # Dropping the column with average for the country
+vcData = vcData[, -9]  # Dropping the column for Washington DC, the 9th column
+</code></pre>
+
+<p>Instead of looking at annual data, let&#39;s focus on different decades (2001-2010 [rows 1-10], 1991-2000 [rows 11-20], 1981-1990 [rows 21-30], 1971-1980 [rows 31-40], and 1961-1970 [rows 41-50]). Let us compute the mean violent crime rates for each state for each decade. Since 1960 does not fit in to our plans, let us drop that row. </p>
+
+<pre><code class="r">vcData = vcData[-51, ]  # Removing the row for 1960, the 51st row
+decades = data.frame(Decade2001_2010 = colMeans(vcData[1:10, ], na.rm = TRUE), 
+    Decade1991_2000 = colMeans(vcData[11:20, ], na.rm = TRUE), Decade1981_1990 = colMeans(vcData[21:30, 
+        ], na.rm = TRUE), Decade1971_1980 = colMeans(vcData[31:40, ], na.rm = TRUE), 
+    Decade1961_1970 = colMeans(vcData[41:50, ], na.rm = TRUE))
+decades$State = row.names(decades)  # We needed a column for State and the row names provided that
+decades = decades[-51, ]  # Remove the row for Yearonly, which is irrelevant.
+dim(decades)
+</code></pre>
+
+<pre><code>## [1] 50  6
+</code></pre>
+
+<pre><code class="r">head(decades, 2)
+</code></pre>
+
+<pre><code>##         Decade2001_2010 Decade1991_2000 Decade1981_1990 Decade1971_1980
+## Alabama           432.5           643.1           519.8           382.5
+## Alaska            628.9           685.3           562.8           445.6
+##         Decade1961_1970   State
+## Alabama           216.9 Alabama
+## Alaska            157.5  Alaska
+</code></pre>
+
+<pre><code class="r">tail(decades, 2)
+</code></pre>
+
+<pre><code>##           Decade2001_2010 Decade1991_2000 Decade1981_1990 Decade1971_1980
+## Wisconsin           248.9           262.4           218.2           134.2
+## Wyoming             242.4           269.4           292.0           235.3
+##           Decade1961_1970     State
+## Wisconsin           54.67 Wisconsin
+## Wyoming             81.69   Wyoming
+</code></pre>
+
+<h3>Choropleths of different decades using ggplot2 and animation</h3>
+
+<p>The first order of business was to get a US map. A typical map file generated from the maps package does not include Alaska and Hawaii. Scouring the web for someone who might&#39;ve addressed this issue took me to  <a href="http://loloflargenumbers.com/blog/#.Up5D6sSkpS4" target="_blank">this post of Kristopher Kapphahn.</a>  The post was terrific and provided the complete code for generating such a map. This code, which is <a href="github.com/patilv/choroplethanimation/AllUSShapeFile" target="_blank">in a separate file for those interested in it</a>, was used to generated a file all_us.rda. We use this file below for the map.</p>
+
+<h6>A preliminary choropleth for the 2001-2010 decade</h6>
+
+<pre><code class="r">load(&quot;all_us.rda&quot;)
+uslessdc = all_us[all_us$STATE_NAME != &quot;District of Columbia&quot;, ]
+uslessdc$STATE_NAME = factor(uslessdc$STATE_NAME)
+uslessdc$CrimeRate = decades[, 1][match(uslessdc$STATE_NAME, decades$State)]  # bring value of decade to map data
+library(ggplot2)
+ggplot(data = uslessdc, aes(x = x_proj, y = y_proj, group = DRAWSEQ, fill = CrimeRate)) + 
+    geom_polygon(color = &quot;black&quot;) + ggtitle(paste(&quot;Violent Crime Rate in&quot;, names(decades[1]))) + 
+    xlab(&quot;&quot;) + ylab(&quot;&quot;)
+</code></pre>
+
+<p><img src="assets/fig/unnamed-chunk-4.png" alt="plot of chunk unnamed-chunk-4"> </p>
+
+<h5>Tweaking Data and Animating Choropleths</h5>
+
+<p>To bring in more clarity, let us classify states into 3 different groups based on their violent crime rates for a decade and color code them differently. Top 1/3 in crime rates (high, denoted by number 3) are most dangerous and middle 1/3 (medium,  denoted by number 2) are more dangerous than the bottom 1/3 (low, denoted by number 1). </p>
+
+<pre><code class="r"># Create a new dataframe with crime rate data in decades classified into 3
+# levels of crime rate for States for a decade.
+decadespct = decades
+for (i in 1:5) {
+    quantile = quantile(decades[, i], c(1/3, 2/3))
+    decadespct[, i] = with(decades, factor(ifelse(decades[, i] &lt; quantile[1], 
+        &quot;1&quot;, ifelse(decades[, i] &lt; quantile[2], &quot;2&quot;, &quot;3&quot;))))
+}
+head(decadespct, 2)
+</code></pre>
+
+<pre><code>##         Decade2001_2010 Decade1991_2000 Decade1981_1990 Decade1971_1980
+## Alabama               2               3               2               2
+## Alaska                3               3               3               3
+##         Decade1961_1970   State
+## Alabama               3 Alabama
+## Alaska                2  Alaska
+</code></pre>
+
+<pre><code class="r">save(decadespct, file = &quot;decadespct.rda&quot;)
+</code></pre>
+
+<p>On to the animation.</p>
+
+<pre><code class="r">library(animation)
+saveHTML({
+    for (i in 1:5) {
+        uslessdc$CrimeRate = decadespct[, i][match(uslessdc$STATE_NAME, decadespct$State)]  # bring value of decade to map data
+        mycols = c(&quot;#4daf4a&quot;, &quot;#fc8d62&quot;, &quot;red&quot;)  # Setting a color palette
+        ggchoropleth = ggplot(data = uslessdc, aes(x = x_proj, y = y_proj, group = DRAWSEQ, 
+            fill = CrimeRate)) + geom_polygon(color = &quot;black&quot;) + ggtitle(paste(&quot;Violent Crime Rate in&quot;, 
+            names(decadespct[i]))) + xlab(&quot;&quot;) + ylab(&quot;&quot;) + scale_fill_manual(values = mycols, 
+            labels = c(&quot;Low&quot;, &quot;Medium&quot;, &quot;High&quot;)) + theme(legend.position = &quot;top&quot;)
+        print(ggchoropleth)
+    }
+}, img.name = &quot;decadeplots&quot;, imgdir = &quot;decadeplots&quot;, htmlfile = &quot;decadeplots.html&quot;, 
+    outdir = getwd(), autobrowse = FALSE, ani.height = 400, ani.width = 600, 
+    verbose = FALSE, autoplay = TRUE, title = &quot;Violent Crime Rates&quot;)
+</code></pre>
+
+<iframe src="decadeplots.html" width=650 height=475> </iframe>
+
+<h3>Choropleths of different decades using rCharts, googleVis, and Shiny</h3>
+
+<p>Before we proceed with these, let&#39;s quickly modify the decadespct data frame and save it for use in this set of animations. Please see the comments for changes made.</p>
+
+<pre><code class="r">decadespctshiny = decadespct
+library(reshape2)
+decadespctshiny = melt(decadespctshiny, id = &quot;State&quot;)  # Reshaping data frame
+names(decadespctshiny) = c(&quot;State&quot;, &quot;Decade_Beginning&quot;, &quot;CrimeRateGroup&quot;)  # Renaming variables
+levels(decadespctshiny$Decade_Beginning) = c(&quot;2000&quot;, &quot;1990&quot;, &quot;1980&quot;, &quot;1970&quot;, 
+    &quot;1960&quot;)  # For animation purposes, replaced decade names by these numbers (e.g., Decade2001_2010 is labeled as 2000, Decade1991_2000 is labeled as 1990, and so on. 
+decadespctshiny$Decade_Beginning = as.numeric(as.character(decadespctshiny$Decade_Beginning))  # converting factor to numeric 
+decadespctshiny$CrimeRateGroup = as.numeric(decadespctshiny$CrimeRateGroup)  # Converting character to numeric
+library(stringr)
+library(plyr)
+decadespctshiny = mutate(decadespctshiny, State = str_trim(State), state = state.abb[match(State, 
+    state.name)])  # Adding a column of abbreviated state names - used in rCharts    
+save(decadespctshiny, file = &quot;decadespctshiny.rda&quot;)  # this file is used in the shiny app
+</code></pre>
+
+<p>Lastly, the app. (Please press the play button. You can toggle between the rCharts version and the googleVis version by selecting the relevant tab.) The app&#39;s <a href="http://www.github.com/patilv/choroplethanimation/Crimerateshinyapp" target="_blank">code can be found on github.</a>  The app is being hosted on RStudio&#39;s <a href="http://shinyapps.io" target="_blank">shinyapps.io </a> site. This has made deploying shiny apps so much more easier than it used to be previously. Thanks for the wonderful thing.</p>
+
+<iframe src="http://patilv.shinyapps.io/Crimerateshinyapp/" width=800 height=610> </iframe>
+
+    </div>
+        
+</body>
+  <script src="libraries/frameworks/bootstrap/js/vendor/bootstrap.min.js"></script>
+  <script src="libraries/frameworks/bootstrap/js/plugins.js"></script>
+  <script src="libraries/frameworks/bootstrap/js/main.js"></script>
+  <!-- Load Javascripts for Widgets -->
+  
+  <!-- LOAD HIGHLIGHTER JS FILES -->
+  <script src="libraries/highlighters/highlight.js/highlight.pack.js"></script>
+  <script>hljs.initHighlightingOnLoad();</script>
+  <!-- DONE LOADING HIGHLIGHTER JS FILES -->
+   
+  </html>
