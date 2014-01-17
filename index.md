@@ -152,7 +152,7 @@ tail(decades, 2)
 
 ### Choropleths of different decades using ggplot2 and animation
 
-The first order of business was to get a US map. A typical map file generated from the maps package does not include Alaska and Hawaii. Scouring the web for someone who might've addressed this issue took me to  <a href="http://loloflargenumbers.com/blog/#.Up5D6sSkpS4" target="_blank">this post of Kristopher Kapphahn.</a>  The post was terrific and provided the complete code for generating such a map. This code, which is <a href="github.com/patilv/choroplethanimation/AllUSShapeFile" target="_blank">in a separate file for those interested in it</a>, was used to generated a file all_us.rda. We use this file below for the map.
+The first order of business was to get a US map. A typical map file generated from the maps package does not include Alaska and Hawaii. Scouring the web for someone who might've addressed this issue took me to  <a href="http://loloflargenumbers.com/blog/#.Up5D6sSkpS4" target="_blank">this post of Kristopher Kapphahn.</a>  The post was terrific and provided the complete code for generating such a map. This code, which is <a href="https://github.com/patilv/choroplethanimation/tree/master/AllUSShapeFile" target="_blank">in a separate file for those interested in it</a>, was used to generated a file all_us.rda. We use this file below for the map.
 
 ###### A preliminary choropleth for the 2001-2010 decade
 
@@ -244,7 +244,7 @@ save(decadespctshiny, file = "decadespctshiny.rda")  # this file is used in the 
 ```
 
 
-Lastly, the app. (Please press the play button. You can toggle between the rCharts version and the googleVis version by selecting the relevant tab.) The app's <a href="http://www.github.com/patilv/choroplethanimation/Crimerateshinyapp" target="_blank">code can be found on github.</a>  The app is being hosted on RStudio's <a href="http://shinyapps.io" target="_blank">shinyapps.io </a> site. This has made deploying shiny apps so much more easier than it used to be previously. Thanks for the wonderful thing.
+Lastly, the app. (Please press the play button. You can toggle between the rCharts version and the googleVis version by selecting the relevant tab.) The app's <a href="https://github.com/patilv/choroplethanimation/tree/master/Crimerateshinyapp" target="_blank">code can be found on github.</a>  The app is being hosted on RStudio's <a href="http://shinyapps.io" target="_blank">shinyapps.io </a> site. This has made deploying shiny apps so much more easier than it used to be previously. Thanks for the wonderful thing.
 <iframe src="http://patilv.shinyapps.io/Crimerateshinyapp/" width=800 height=610> </iframe>
 
 
