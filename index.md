@@ -244,8 +244,8 @@ save(decadespctshiny, file = "decadespctshiny.rda")  # this file is used in the 
 ```
 
 
-Lastly, the app. (Please press the play button. You can toggle between the rCharts version and the googleVis version by selecting the relevant tab.) The app's <a href="https://github.com/patilv/choroplethanimation/tree/master/Crimerateshinyapp" target="_blank">code can be found on github.</a>  The app is being hosted on RStudio's <a href="http://shinyapps.io" target="_blank">shinyapps.io </a> site. This has made deploying shiny apps so much more easier than it used to be previously. Thanks for the wonderful thing.
-<iframe src="http://patilv.shinyapps.io/Crimerateshinyapp/" width=800 height=610> </iframe>
+Lastly, the app. (Please press the play button. You can toggle between the rCharts version and the googleVis version by selecting the relevant tab.) The app's <a href="https://github.com/patilv/choroplethanimation/tree/master/Crimerateshinyapp" target="_blank">code can be found on github.</a>  The app is being hosted on RStudio's <a href="http://glimmer.rstudio.com/vivekpatil/Crimerateshinyapp/" target="_blank">glimmer server site </a>. Thanks for the wonderful thing.
+<iframe src="http://glimmer.rstudio.com/vivekpatil/Crimerateshinyapp/" width=800 height=610> </iframe>
 
 
 
